@@ -5,10 +5,11 @@ use \Stash\Pool;
 
 class StashCache
 {
-    public function __construct($container)
+    public function __construct($container, $expiration = 3600)
     {
         $this->container = $container;
         $this->stash = $container->get('stash');
+        $this->expiration = $expiration;
     }
 
     public function __invoke($req, $resp, $next)
@@ -46,13 +47,13 @@ class StashCache
         $next($req, $resp);
 
         // If we allow cache and the endpoint ran correctly, cache the result
-        if ($req->getAttribute('allowCache') && ($resp->getStatusCode() == 200)) {
+        if ($resp->getStatusCode() == 200) {
             $resp = $this->container->cache->withExpires($resp, time() + 3600);
             $stashItem->set(array(
                 'content_type'  => $resp->getHeader('Content-Type'),
                 'body'          => $resp->getBody()->getContents(),
                 'last_modified' => time()
-            ), $req->getAttribute('cacheExpiration'));
+            ), $expiration);
         }
 
         return $resp;
