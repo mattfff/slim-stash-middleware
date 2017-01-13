@@ -3,22 +3,21 @@ namespace There4\Slim\Middleware;
 
 use \Stash\Pool;
 
-class StashCache extends \Slim\Middleware
+class StashCache
 {
-    public function __construct(Pool $stash)
+    public function __construct($container)
     {
-        $this->stash = $stash;
+        $this->container = $container;
+        $this->stash = $container->get('stash');
     }
 
-    public function call()
+    public function __invoke($req, $resp, $next)
     {
-        $req   = $this->app->request();
-        $resp  = $this->app->response();
         $stash = $this->stash;
 
         // Only cache GET requests
-        if (!$this->app->request->isGet()) {
-            $this->next->call();
+        if (!$req->isGet()) {
+            $next($req, $resp);
             return;
         }
 
@@ -36,18 +35,18 @@ class StashCache extends \Slim\Middleware
         $stashItem = $stash->getItem('routes' . $signature);
         if (!$stashItem->isMiss()) {
             $data = $stashItem->get(\Stash\Item::SP_PRECOMPUTE, 300);
-            $this->app->lastModified($data['last_modified']);
+            $this->container->cache->withLastModified($resp, $data['last_modified']);
             $resp['Content-Type'] = $data['content_type'];
             $resp->body($data['body']);
             return;
         }
         // Else we continue on with the middleware change and run the next
         // middleware layer
-        $this->next->call();
+        $next($req, $resp);
 
         // If we allow cache and the endpoint ran correctly, cache the result
         if (!empty($resp->allowCache) && ($resp->status() == 200)) {
-            $this->app->expires('+1 hour');
+            $this->container->cache->withExpires($resp, time() + 3600);
             $stashItem->set(array(
                 'content_type'  => $resp['Content-Type'],
                 'body'          => $resp->body(),
@@ -56,5 +55,3 @@ class StashCache extends \Slim\Middleware
         }
     }
 }
-
-/* End of file StashCache.php */
