@@ -35,7 +35,7 @@ class StashCache
         // and return to halt the response chain
         $stashItem = $stash->getItem('routes' . $signature);
         if (!$stashItem->isMiss()) {
-            $data = $stashItem->get(\Stash\Item::SP_PRECOMPUTE, 300);
+            $data = $stashItem->get();
             $resp = $this->container->cache->withLastModified($resp, $data['last_modified']);
             $resp = $resp->withHeader('Content-Type', $data['content_type']);
             $resp->getBody()->write($data['body']);
