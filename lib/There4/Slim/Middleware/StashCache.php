@@ -51,9 +51,12 @@ class StashCache
             $resp = $this->container->cache->withExpires($resp, time() + 3600);
             $stashItem->expiresAfter($this->expiration);
 
+            $body = $resp->getBody();
+            $body->rewind();
+
             $stashItem->set(array(
                 'content_type'  => $resp->getHeader('Content-Type'),
-                'body'          => $resp->getBody()->getContents(),
+                'body'          => $body->getContents(),
                 'last_modified' => time()
             ));
 
