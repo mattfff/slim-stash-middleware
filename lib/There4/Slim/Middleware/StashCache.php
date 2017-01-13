@@ -38,7 +38,7 @@ class StashCache
             $this->container->cache->withLastModified($resp, $data['last_modified']);
             $resp['Content-Type'] = $data['content_type'];
             $resp->getBody()->write($data['body']);
-            return;
+            return $resp;
         }
 
         // Else we continue on with the middleware change and run the next
@@ -54,5 +54,7 @@ class StashCache
                 'last_modified' => time()
             ), $resp->cacheExpiration);
         }
+
+        return $resp;
     }
 }
