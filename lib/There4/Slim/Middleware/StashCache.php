@@ -53,7 +53,7 @@ class StashCache
                 'content_type'  => $resp->getHeader('Content-Type'),
                 'body'          => $resp->getBody()->getContents(),
                 'last_modified' => time()
-            ), $expiration);
+            ), $this->expiration);
         }
 
         return $resp;
