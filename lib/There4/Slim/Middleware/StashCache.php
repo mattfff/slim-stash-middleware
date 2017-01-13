@@ -27,7 +27,7 @@ class StashCache
                 ? call_user_func($resp->signature)
                 : $resp->signature;
         } else {
-            $signature = $req->getResourceUri();
+            $signature = $req->getUri()->getPath();
         }
 
         // Get via the signature if it's not a miss send it to the client
@@ -37,19 +37,20 @@ class StashCache
             $data = $stashItem->get(\Stash\Item::SP_PRECOMPUTE, 300);
             $this->container->cache->withLastModified($resp, $data['last_modified']);
             $resp['Content-Type'] = $data['content_type'];
-            $resp->body($data['body']);
+            $resp->getBody()->write($data['body']);
             return;
         }
+
         // Else we continue on with the middleware change and run the next
         // middleware layer
         $next($req, $resp);
 
         // If we allow cache and the endpoint ran correctly, cache the result
-        if (!empty($resp->allowCache) && ($resp->status() == 200)) {
+        if (!empty($resp->allowCache) && ($resp->getStatusCode() == 200)) {
             $this->container->cache->withExpires($resp, time() + 3600);
             $stashItem->set(array(
                 'content_type'  => $resp['Content-Type'],
-                'body'          => $resp->body(),
+                'body'          => $resp->getBody()->getContents(),
                 'last_modified' => time()
             ), $resp->cacheExpiration);
         }
