@@ -49,11 +49,15 @@ class StashCache
         // If we allow cache and the endpoint ran correctly, cache the result
         if ($resp->getStatusCode() == 200) {
             $resp = $this->container->cache->withExpires($resp, time() + 3600);
+            $stashItem->expiresAfter($this->expiration);
+
             $stashItem->set(array(
                 'content_type'  => $resp->getHeader('Content-Type'),
                 'body'          => $resp->getBody()->getContents(),
                 'last_modified' => time()
-            ), $this->expiration);
+            ));
+
+            $stash->save($stashItem);
         }
 
         return $resp;
