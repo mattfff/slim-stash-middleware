@@ -18,14 +18,14 @@ class StashCache
         // Only cache GET requests
         if (!$req->isGet()) {
             $next($req, $resp);
-            return;
+            return $resp;
         }
 
         // Allow a callback, call_user_func allows an array to be passed
-        if (isset($resp->signature)) {
-            $signature = is_callable($resp->signature)
-                ? call_user_func($resp->signature)
-                : $resp->signature;
+        if ($req->getAttribute('signature')) {
+            $signature = is_callable($req->getAttribute('signature'))
+                ? call_user_func($resp->getAttribute('signature'))
+                : $resp->getAttribute('signature');
         } else {
             $signature = $req->getUri()->getPath();
         }
@@ -35,8 +35,8 @@ class StashCache
         $stashItem = $stash->getItem('routes' . $signature);
         if (!$stashItem->isMiss()) {
             $data = $stashItem->get(\Stash\Item::SP_PRECOMPUTE, 300);
-            $this->container->cache->withLastModified($resp, $data['last_modified']);
-            $resp['Content-Type'] = $data['content_type'];
+            $resp = $this->container->cache->withLastModified($resp, $data['last_modified']);
+            $resp = $resp->withHeader('Content-Type', $data['content_type']);
             $resp->getBody()->write($data['body']);
             return $resp;
         }
@@ -46,13 +46,13 @@ class StashCache
         $next($req, $resp);
 
         // If we allow cache and the endpoint ran correctly, cache the result
-        if (!empty($resp->allowCache) && ($resp->getStatusCode() == 200)) {
-            $this->container->cache->withExpires($resp, time() + 3600);
+        if ($req->getAttribute('allowCache') && ($resp->getStatusCode() == 200)) {
+            $resp = $this->container->cache->withExpires($resp, time() + 3600);
             $stashItem->set(array(
-                'content_type'  => $resp['Content-Type'],
+                'content_type'  => $resp->getHeader('Content-Type'),
                 'body'          => $resp->getBody()->getContents(),
                 'last_modified' => time()
-            ), $resp->cacheExpiration);
+            ), $req->getAttribute('cacheExpiration'));
         }
 
         return $resp;
