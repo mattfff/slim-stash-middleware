@@ -26,7 +26,7 @@
         }
     },
     "require": {
-        "tedivm/stash": "0.12.*"
+        "tedivm/stash": "0.14.*"
     },
     "require-dev": {
         "slim/slim": "2.4.*",
