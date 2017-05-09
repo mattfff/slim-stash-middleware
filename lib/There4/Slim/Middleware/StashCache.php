@@ -44,7 +44,7 @@ class StashCache
 
         // Else we continue on with the middleware change and run the next
         // middleware layer
-        $next($req, $resp);
+        $resp = $next($req, $resp);
 
         // If we allow cache and the endpoint ran correctly, cache the result
         if ($resp->getStatusCode() == 200) {
